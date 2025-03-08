@@ -1,6 +1,7 @@
 //Hey folks! This code is brought to you by Roflboy. Every single line was made with love for the Minecraft community. <3
 package ua.geminiinminecraft;
 
+import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.text.Text;
 import com.google.gson.*;
 import com.mojang.brigadier.Command;
@@ -38,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@SuppressWarnings({"SameReturnValue", "MismatchedQueryAndUpdateOfCollection"})
 public class GeminiInMinecraftClient implements ClientModInitializer {
 	public static final String MOD_ID = "geminiaiinminecraft";
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
@@ -121,6 +123,11 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 			dispatcher.register(
 					ClientCommandManager.literal("clearmemory")
 							.executes(this::clearMemory)
+			);
+
+			dispatcher.register(
+					ClientCommandManager.literal("reloadconfig")
+							.executes(this::reloadConfig)
 			);
 
 			dispatcher.register(
@@ -404,6 +411,12 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		config.addProperty("commandExecutionEnabled", COMMAND_EXECUTION_ENABLED);
 
 		saveConfig(config);
+	}
+
+	private int reloadConfig(CommandContext<FabricClientCommandSource> context) {
+		loadConfig();
+		sendFeedback(Text.literal(PREFIX + "Configuration reloaded!"));
+		return 1;
 	}
 
 	private int setupApiToken(CommandContext<?> context) {

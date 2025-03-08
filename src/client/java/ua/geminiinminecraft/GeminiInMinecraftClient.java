@@ -2,6 +2,7 @@
 package ua.geminiinminecraft;
 
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.text.Text;
 import com.google.gson.*;
 import com.mojang.brigadier.Command;
@@ -83,7 +84,10 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
         You have ability to execute in-game commands. Use code blocks with minecraft language to execute commands. \
         Example: ```minecraft
         time set day
-        ```""";
+        ```
+       \s
+        Also, you can write in chat, using command "sayinchat TEXT"
+       """;
 
 	private static String MODEL_NAME;
 	private static boolean MEMORY_ENABLED = false;
@@ -128,6 +132,13 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 			dispatcher.register(
 					ClientCommandManager.literal("reloadconfig")
 							.executes(this::reloadConfig)
+			);
+
+			dispatcher.register(
+					ClientCommandManager.literal("sayinchat")
+							.then(ClientCommandManager.argument("message", StringArgumentType.greedyString())
+									.executes(this::executeSayInChat)
+							)
 			);
 
 			dispatcher.register(
@@ -758,6 +769,17 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		}
 
 		return text;
+	}
+
+	private int executeSayInChat(CommandContext<FabricClientCommandSource> context) {
+		String message = StringArgumentType.getString(context, "message");
+		ClientPlayerEntity player = MinecraftClient.getInstance().player;
+
+		if (player != null) {
+			player.networkHandler.sendChatMessage(message);
+			return 1;
+		}
+		return 0;
 	}
 
 	public String sendMessageToGemini(String userMessage, UUID playerUuid) throws Exception {

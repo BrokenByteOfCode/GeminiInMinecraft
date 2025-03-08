@@ -38,7 +38,7 @@ jobs:
 
   release:
     needs: build
-    if: startsWith(github.ref, 'refs/tags/')
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
@@ -50,11 +50,15 @@ jobs:
           name: Artifacts
           path: release-files
 
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d-%H-%M')" >> $GITHUB_OUTPUT
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: release-files/*.jar
           token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: ${{ github.ref_name }}
-          name: "Release ${{ github.ref_name }}"
-          body: "Автоматично згенерований реліз 🚀"
+          tag_name: release-${{ steps.date.outputs.date }}
+          name: "Release від ${{ steps.date.outputs.date }}"
+          body: "Автоматично згенерований реліз з main 🚀"

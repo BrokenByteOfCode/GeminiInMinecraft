@@ -1,0 +1,32 @@
+{
+  "messages": [
+    "// TODO: Implement Herobrine",
+    "Помилки — це просто кріпери в твоєму коді Java.",
+    "Діаманти знайдено, часу на виправлення багів немає!",
+    "Сон для слабаків — справжні розробники модів на майн, ночами ловлять NullPointerException.",
+    "Fabric настільки легкий, що навіть кріпер його не помітить!",
+    "System.out.println(\"Кількість багів: \" + Integer.MAX_VALUE);",
+    "Thread.sleep() — альтернативна назва ночі перед дедлайном.",
+    "class Bug extends Entity implements Unfixable {}",
+    "Кожен новий мод на Майн, це плюс до карми та мінус до сну.",
+    "Не забувай: beforeEach() викликається перед кожним походом в шахту!",
+    "try { buildMod(); } catch (CreeperExplosion e) { rebuildMod(); }",
+    "private final boolean mayContainCreepers = true;",
+    "if(player.isHungry()) player.feed(new ItemStack(Items.POTATO));",
+    "[INFO] Fabric mod завантажений, Херобрін готовий.",
+    "Коли у коді хаос, винен Ендермен.",
+    "Рецепт крафтингу знайдено: Живчик + код = ідеальний вечір.",
+    "Майкрафт модери не баги виправляють, а створюють нові пригоди!",
+    "Цей Java-код написав зомбі — він мертвий, але все ще рухається.",
+    "while(isNight()) { drinkCoffee(); writeCode(); }",
+    "@Deprecated public static final String SLEEP = \"Що це таке?\";",
+    "// Баги не баги, якщо назвати їх фічами",
+    "enum ModderState { CODING, DEBUGGING, DRINKING_COFFEE, QUESTIONING_LIFE_CHOICES }",
+    "Git commit -m \"Прибрав Херобріна... мабуть\"",
+    "// TODO: Розібратись чому червоний камінь працює через раз",
+    "public boolean isWorking() { return Math.random() > 0.5; } // документація як у Mojang",
+    "catch(Exception e) { //Тут був Ендермен }",
+    "public static final int CAFFEINE_LEVEL = Integer.MAX_VALUE;",
+    "// Цей код оптимізований таким чином, що навіть автор не знає як він працює"
+  ]
+}

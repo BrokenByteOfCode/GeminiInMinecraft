@@ -55,12 +55,12 @@ jobs:
 
       - name: Get current date
         id: date
-        run: echo "date=$(date +'%Y-%m-%d-%H-%M')" >> $GITHUB_ENV
+        run: echo "date=$(date +'%d-%m-%Y_%H:%M')" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: release-files/*.jar
           tag_name: release-${{ env.date }}
-          name: "Release від ${{ env.date }}"
-          body: "Автоматично згенерований реліз з main 🚀"
+          name: "Реліз ${{ env.date }}"
+          body: "Цей реліз був автоматичний. Тому в разі якихось проблем, створюйте багрепорт в Issues."

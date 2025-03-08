@@ -110,7 +110,7 @@ And, of course, thank *you* for using my mod! I hope you find it helpful and fun
 
 ## Contributing
 
-If you'd like to contribute to the development of this mod, feel free to submit issues or pull requests on the [GitHub repository](Add_Later).  All contributions are welcome, whether it's bug fixes, feature suggestions, or code improvements. Please make sure your pull request is relevant.
+If you'd like to contribute to the development of this mod, feel free to submit issues or pull requests on the [GitHub repository](https://github.com/BehindThatTeam/GeminiInMinecraft).  All contributions are welcome, whether it's bug fixes, feature suggestions, or code improvements. Please make sure your pull request is relevant.
 
 ## Support the Project (Optional)
 

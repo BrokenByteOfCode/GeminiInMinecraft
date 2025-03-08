@@ -9,7 +9,7 @@ on:
   pull_request:
 
 permissions:
-  contents: write  # Дає GITHUB_TOKEN право створювати релізи
+  contents: write  # Gives GITHUB_TOKEN rights to create releases
 
 jobs:
   build:
@@ -62,5 +62,5 @@ jobs:
         with:
           files: release-files/*.jar
           tag_name: release-${{ env.date }}
-          name: "Реліз ${{ env.date }}"
-          body: "Цей реліз був автоматичний. Тому в разі якихось проблем, створюйте багрепорт в Issues."
+          name: "Release ${{ env.date }}"
+          body: "This release is fully automated. If you run into any issues, just file a bug report in Issues."

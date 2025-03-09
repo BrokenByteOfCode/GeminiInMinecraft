@@ -61,9 +61,9 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: release-files/*.jar
-          tag_name: release-${{ env.date }}
-          name: "Release ${{ env.date }}"
-          body: "This release is fully automated. If you run into any issues, just file a bug report in Issues."
+          tag_name: beta-${{ env.date }}
+          name: "Beta ${{ env.date }}"
+          body: "This is a beta release. If you run into any issues, just file a bug report in Issues."
 
   modrinth:
     needs: build
@@ -97,9 +97,9 @@ jobs:
           modrinth-featured: true
           modrinth-unfeature-mode: subset
           files: ${{ steps.find-jar.outputs.jarfile }}
-          version-type: release
-          version-name: "Release ${{ env.date }}"
-          version-number: "${{ env.date }}"
+          version-type: beta
+          name: "Beta ${{ env.date }}"
+          version: "${{ env.date }}"
           changelog: "This release is fully automated. If you run into any issues, just file a bug report in Issues."
           loaders: fabric
           game-versions: 1.21.4

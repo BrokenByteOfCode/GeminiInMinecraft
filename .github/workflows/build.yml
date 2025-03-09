@@ -64,3 +64,42 @@ jobs:
           tag_name: release-${{ env.date }}
           name: "Release ${{ env.date }}"
           body: "This release is fully automated. If you run into any issues, just file a bug report in Issues."
+
+  modrinth:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: Artifacts
+          path: ./artifacts
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y%m%d%H%M')" >> $GITHUB_ENV
+
+      - name: Find JAR file
+        id: find-jar
+        run: |
+          JARFILE=$(find ./artifacts -name "*.jar" -not -name "*-dev.jar" -not -name "*-sources.jar" | head -n 1)
+          echo "jarfile=$JARFILE" >> $GITHUB_OUTPUT
+
+      - name: Upload to Modrinth
+        uses: Kir-Antipov/mc-publish@v3.3
+        with:
+          modrinth-id: ${{ secrets.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          modrinth-featured: true
+          modrinth-unfeature-mode: subset
+          files: ${{ steps.find-jar.outputs.jarfile }}
+          version-type: release
+          version-name: "Release ${{ env.date }}"
+          version-number: "${{ env.date }}"
+          changelog: "This release is fully automated. If you run into any issues, just file a bug report in Issues."
+          loaders: fabric
+          game-versions: 1.21.4

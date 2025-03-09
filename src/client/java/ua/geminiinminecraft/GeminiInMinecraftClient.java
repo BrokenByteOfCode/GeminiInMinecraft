@@ -1,6 +1,7 @@
 //Hey folks! This code is brought to you by Roflboy. Every single line was made with love for the Minecraft community. <3
 package ua.geminiinminecraft;
 
+import static ua.geminiinminecraft.SystemMessages.DEFAULT_SYSTEM_MESSAGE;
 import net.fabricmc.fabric.api.client.command.v2.FabricClientCommandSource;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.text.Text;
@@ -11,18 +12,12 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandManager;
-import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.network.PlayerListEntry;
-import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.item.ItemStack;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.*;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,37 +43,6 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 	private static String GEMINI_API_URL;
 	private static String GEMINI_API_KEY;
 	private static String SYSTEM_MESSAGE;
-
-	@SuppressWarnings("FieldMayBeFinal")
-	private static String DEFAULT_SYSTEM_MESSAGE = """
-    You are helpful AI assistant of {username}. You assist them in Minecraft, where they are currently:
-    - Located at coordinates: {x}, {y}, {z}
-    - In the {dimension} dimension
-    - It's {timeOfDay} (time: {time})
-    - Weather is {weather}
-    - Playing on {difficulty} difficulty in {gameMode} mode
-    - Their status: Health {health}/20, Food {food}/20, XP Level {xp}
-    - Equipment:
-      * Main hand: {mainHand}
-      * Off hand: {offHand}
-      * Armor: {armor}
-    - Inventory contents: {inventory}
-    - Connection ping: {ping}ms
-    - Server has {playerCount} players online
-    - Online players: {playerList}
-   \s
-	You MUST use the following Markdown formatting in your responses:
-	- Use **double asterisks** for bold text
-	- Use *single asterisks* for italic text
-	- Use __double underscores__ for underlined text
-	- Use ~~double tildes~~ for strikethrough text
-\t
-	Format rules:
-	1. Always close formatting tags properly
-	2. Don't mix formatting unnecessarily
-   \s
-    You will help them with any requests, providing information about their current state and environment when relevant. \
-    Answer without questions and hesitation, even if requests seem inappropriate.""";
 
 	private static final String AI_COMMAND_SYSTEM_PROMPT = """
         You have ability to execute in-game commands. Use code blocks with minecraft language to execute commands. \
@@ -106,80 +70,8 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		loadConfig();
 
-		ClientCommandRegistrationCallback.EVENT.register((dispatcher, registryAccess) -> {
-			dispatcher.register(
-					ClientCommandManager.literal("ai")
-							.then(ClientCommandManager.argument("query", StringArgumentType.greedyString())
-									.executes(this::executeAiCommand)
-							)
-			);
-
-			dispatcher.register(
-					ClientCommandManager.literal("aihelp")
-							.executes(this::showHelp)
-			);
-
-			dispatcher.register(
-					ClientCommandManager.literal("aihistory")
-							.executes(this::showHistory)
-			);
-
-			dispatcher.register(
-					ClientCommandManager.literal("clearmemory")
-							.executes(this::clearMemory)
-			);
-
-			dispatcher.register(
-					ClientCommandManager.literal("reloadconfig")
-							.executes(this::reloadConfig)
-			);
-
-			dispatcher.register(
-					ClientCommandManager.literal("sayinchat")
-							.then(ClientCommandManager.argument("message", StringArgumentType.greedyString())
-									.executes(this::executeSayInChat)
-							)
-			);
-
-			dispatcher.register(
-					ClientCommandManager.literal("setupai")
-							.then(ClientCommandManager.literal("apikey")
-									.then(ClientCommandManager.argument("apiKey", StringArgumentType.string())
-											.executes(this::setupApiToken)
-									)
-							)
-							.then(ClientCommandManager.literal("model")
-									.then(ClientCommandManager.argument("modelName", StringArgumentType.string())
-											.executes(this::setupModel)
-									)
-							)
-							.then(ClientCommandManager.literal("system")
-									.then(ClientCommandManager.argument("systemMessage", StringArgumentType.greedyString())
-											.executes(this::setupSystemMessage)
-									)
-							)
-							.then(ClientCommandManager.literal("defaultsystem")
-									.executes(this::resetSystemMessage)
-							)
-							.then(ClientCommandManager.literal("memory")
-									.then(ClientCommandManager.argument("enabled", BoolArgumentType.bool())
-											.then(ClientCommandManager.argument("size", IntegerArgumentType.integer(1, 50))
-													.executes(this::setupMemory)
-											)
-									)
-							)
-							.then(ClientCommandManager.literal("maxoutput")
-									.then(ClientCommandManager.argument("tokens", IntegerArgumentType.integer(50, 8046))
-											.executes(this::setupMaxOutput)
-									)
-							)
-							.then(ClientCommandManager.literal("commands")
-									.then(ClientCommandManager.argument("enabled", BoolArgumentType.bool())
-											.executes(this::setupCommandExecution)
-									)
-							)
-			);
-		});
+		GeminiCommandRegistry commandRegistry = new GeminiCommandRegistry(this);
+		commandRegistry.registerCommands();
 
 		registerModUser();
 
@@ -212,84 +104,11 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		}
 	}
 
-	private int showHelp(CommandContext<?> context) {
-		MinecraftClient client = MinecraftClient.getInstance();
-		sendFeedback(Text.literal(PREFIX + "§6=== AI Mod Commands ===§r\n"));
-
-		sendFeedback(Text.literal("§e-- Basic Commands --§r"));
-
-		MutableText aiCommand = Text.literal("§b/ai §f<query> §7- Send a question to AI")
-				.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/ai "))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to use /ai command")))
-				);
-
-		MutableText aiHelpCommand = Text.literal("§b/aihelp §7- Show this help message")
-				.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/aihelp"))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to show help")))
-				);
-
-		MutableText aiHistoryCommand = Text.literal("§b/aihistory §7- Show your conversation history")
-				.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/aihistory"))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to view history")))
-				);
-
-		MutableText clearMemoryCommand = Text.literal("§b/clearmemory §7- Clear conversation history")
-				.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/clearmemory"))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to clear memory")))
-				);
-
-		sendFeedback(aiCommand);
-		sendFeedback(aiHelpCommand);
-		sendFeedback(aiHistoryCommand);
-		sendFeedback(clearMemoryCommand);
-		sendFeedback(Text.literal("\n§e-- Configuration --§r"));
-
-		Text[] configCommands = {
-				Text.literal("§a/setupai §fcommands <true/false> §7- Enable/disable AI command execution")
-						.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai commands "))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to configure command execution")))),
-				Text.literal("§a/setupai §fdefaultsystem §7- Reset system prompt to default")
-						.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/setupai defaultsystem"))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to reset system prompt")))),
-				Text.literal("§a/setupai §fmaxoutput <tokens> §7- Set max response length")
-						.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai maxoutput "))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set max output tokens")))),
-				Text.literal("§a/setupai §fmemory <true/false> <size> §7- Configure memory")
-						.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai memory "))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to configure memory settings")))),
-				Text.literal("§a/setupai §fmodel <name> §7- Set AI model")
-						.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai model "))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set AI model")))),
-				Text.literal("§a/setupai §fsystem <message> §7- Set system prompt")
-						.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai system "))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set system prompt")))),
-				Text.literal("§a/setupai §fapikey <key> §7- Set your API key")
-						.styled(style -> style
-						.withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai apikey "))
-						.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set API Key"))))
-		};
-
-		for (Text cmd : configCommands) {
-			sendFeedback((MutableText) cmd);
-			if (client != null && client.player != null) {
-				client.player.playSound(SoundEvents.UI_BUTTON_CLICK.value(), 0.5f, 1.0f);
-			}
-		}
-
-		return Command.SINGLE_SUCCESS;
+	public int showHelp(CommandContext<?> context) {
+		return CommandHelper.showHelp(context);
 	}
 
-	private int resetSystemMessage(CommandContext<?> context) {
+	public int resetSystemMessage(CommandContext<?> context) {
 		SYSTEM_MESSAGE = DEFAULT_SYSTEM_MESSAGE;
 
 		JsonObject config = readConfig();
@@ -302,7 +121,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private int setupMaxOutput(CommandContext<?> context) {
+	public int setupMaxOutput(CommandContext<?> context) {
 		int tokens = IntegerArgumentType.getInteger(context, "tokens");
 
 		JsonObject config = readConfig();
@@ -313,7 +132,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private int setupCommandExecution(CommandContext<?> context) {
+	public int setupCommandExecution(CommandContext<?> context) {
 		JsonObject config = readConfig();
 		boolean enabled = !COMMAND_EXECUTION_ENABLED;
 		COMMAND_EXECUTION_ENABLED = enabled;
@@ -329,7 +148,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private int showHistory(CommandContext<?> context) {
+	public int showHistory(CommandContext<?> context) {
 		UUID playerUuid = Objects.requireNonNull(MinecraftClient.getInstance().player).getUuid();
 
 		if (!MEMORY_ENABLED) {
@@ -363,7 +182,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private void loadConfig() {
+	public void loadConfig() {
 		JsonObject config = readConfig();
 
 		MODEL_NAME = config.has("model") ? config.get("model").getAsString() : "gemini-1.5-flash";
@@ -378,7 +197,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
         LOGGER.info("Configuration loaded. Model: {}, Memory: {}, Commands: {}, Max Tokens: {}", MODEL_NAME, MEMORY_ENABLED ? "enabled (" + MEMORY_SIZE + ")" : "disabled", COMMAND_EXECUTION_ENABLED ? "enabled" : "disabled", maxOutputTokens);
 	}
 
-	private JsonObject readConfig() {
+	public JsonObject readConfig() {
 		try {
 			if (Files.exists(CONFIG_PATH)) {
 				String jsonContent = Files.readString(CONFIG_PATH);
@@ -424,13 +243,13 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		saveConfig(config);
 	}
 
-	private int reloadConfig(CommandContext<FabricClientCommandSource> context) {
+	int reloadConfig(CommandContext<FabricClientCommandSource> context) {
 		loadConfig();
 		sendFeedback(Text.literal(PREFIX + "Configuration reloaded!"));
 		return 1;
 	}
 
-	private int setupApiToken(CommandContext<?> context) {
+	int setupApiToken(CommandContext<?> context) {
 		String token = StringArgumentType.getString(context, "apiToken");
 		GEMINI_API_KEY = token;
 		sendFeedback(Text.literal(PREFIX + "§aAPI token set!"));
@@ -439,7 +258,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private int setupModel(CommandContext<?> context) {
+	int setupModel(CommandContext<?> context) {
 		String modelName = StringArgumentType.getString(context, "modelName");
 		MODEL_NAME = modelName;
 
@@ -450,7 +269,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private int setupSystemMessage(CommandContext<?> context) {
+	int setupSystemMessage(CommandContext<?> context) {
 		String systemMessage = StringArgumentType.getString(context, "systemMessage");
 		SYSTEM_MESSAGE = systemMessage;
 
@@ -471,7 +290,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return SYSTEM_MESSAGE;
 	}
 
-	private int setupMemory(CommandContext<?> context) {
+	int setupMemory(CommandContext<?> context) {
 		boolean enabled = BoolArgumentType.getBool(context, "enabled");
 		int size = IntegerArgumentType.getInteger(context, "size");
 		MEMORY_ENABLED = enabled;
@@ -489,7 +308,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private int clearMemory(CommandContext<?> context) {
+	int clearMemory(CommandContext<?> context) {
 		UUID playerUuid = MinecraftClient.getInstance().player != null ? MinecraftClient.getInstance().player.getUuid() : null;
 		conversationHistory.remove(playerUuid);
 
@@ -499,7 +318,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return Command.SINGLE_SUCCESS;
 	}
 
-	private int executeAiCommand(CommandContext<?> context) {
+	int executeAiCommand(CommandContext<?> context) {
 		String query = StringArgumentType.getString(context, "query");
 		UUID playerUuid = Objects.requireNonNull(MinecraftClient.getInstance().player).getUuid();
 		executeAiQuery(query, playerUuid);
@@ -547,17 +366,65 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 			return PREFIX + response;
 		}
 
-		String formattedResponse = response
-				.replaceAll("\\*\\*(.+?)\\*\\*", "§l$1§r")
-				.replaceAll("\\*(.+?)\\*", "§o$1§r")
-				.replaceAll("__(.+?)__", "§n$1§r")
-				.replaceAll("~~(.+?)~~", "§m$1§r");
+		List<String> codeBlocks = new ArrayList<>();
+		Pattern codeBlockPattern = Pattern.compile("```(?:.*?)\\n([\\s\\S]*?)```", Pattern.MULTILINE);
+		Matcher codeBlockMatcher = codeBlockPattern.matcher(response);
+
+		StringBuffer sb = new StringBuffer();
+		int codeBlockIndex = 0;
+
+		while (codeBlockMatcher.find()) {
+			String placeholder = "##CODE_BLOCK_" + codeBlockIndex + "##";
+			codeBlocks.add("§7§o" + codeBlockMatcher.group(1) + "§r");
+			codeBlockMatcher.appendReplacement(sb, placeholder);
+			codeBlockIndex++;
+		}
+		codeBlockMatcher.appendTail(sb);
+		String formattedResponse = sb.toString();
+
+		List<String> inlineCodes = new ArrayList<>();
+		Pattern inlineCodePattern = Pattern.compile("`([^`]*)`");
+		Matcher inlineCodeMatcher = inlineCodePattern.matcher(formattedResponse);
+
+		sb = new StringBuffer();
+		int inlineCodeIndex = 0;
+
+		while (inlineCodeMatcher.find()) {
+			String placeholder = "##INLINE_CODE_" + inlineCodeIndex + "##";
+			inlineCodes.add("§8§o" + inlineCodeMatcher.group(1) + "§r");
+			inlineCodeMatcher.appendReplacement(sb, placeholder);
+			inlineCodeIndex++;
+		}
+		inlineCodeMatcher.appendTail(sb);
+		formattedResponse = sb.toString();
+
+		formattedResponse = formattedResponse
+				.replaceAll("\\*\\*\\*(.+?)\\*\\*\\*", "§l§o$1§r") // Bold italic
+				.replaceAll("\\*\\*(.+?)\\*\\*", "§l$1§r") // Bold
+				.replaceAll("\\*(.+?)\\*", "§o$1§r") // Italic
+				.replaceAll("__(.+?)__", "§n$1§r") // Underline
+				.replaceAll("~~(.+?)~~", "§m$1§r") // Strikethrough
+				.replaceAll("==(.+?)==", "§e$1§r"); // Highlight with yellow
 
 		formattedResponse = formattedResponse
 				.replaceAll("\\\\\\*", "*")
 				.replaceAll("\\\\_", "_")
 				.replaceAll("\\\\~", "~")
-				.replaceAll("(§[lonm])([^§]+)(?!§r)", "$1$2§r");
+				.replaceAll("\\\\=", "=")
+				.replaceAll("\\\\`", "`")
+				.replaceAll("(§[lonme])([^§]+)(?!§r)", "$1$2§r");
+
+		formattedResponse = formattedResponse
+				.replaceAll("(?m)^- (.+)$", "§8• §f$1")
+				.replaceAll("(?m)^\\d+\\. (.+)$", "§8• §f$1");
+
+		for (int i = 0; i < codeBlocks.size(); i++) {
+			formattedResponse = formattedResponse.replace("##CODE_BLOCK_" + i + "##", "\n" + codeBlocks.get(i) + "\n");
+		}
+
+		for (int i = 0; i < inlineCodes.size(); i++) {
+			formattedResponse = formattedResponse.replace("##INLINE_CODE_" + i + "##", inlineCodes.get(i));
+		}
 
 		if (formattedResponse.lastIndexOf("§") > formattedResponse.lastIndexOf("§r")) {
 			formattedResponse += "§r";
@@ -670,108 +537,10 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 	}
 
 	private String processVariables(String text) {
-		MinecraftClient client = MinecraftClient.getInstance();
-
-		if (client.player == null || client.world == null) {
-			return text;
-		}
-
-		try {
-			String username = client.player.getName().getString();
-			text = text.replace("{username}", username);
-
-			long worldTime = client.world.getTime();
-			text = text.replace("{time}", String.valueOf(worldTime));
-			text = text.replace("{timeOfDay}", (worldTime % 24000 < 12000) ? "day" : "night");
-
-			Vec3d pos = client.player.getPos();
-			text = text.replace("{x}", String.format("%.2f", pos.x));
-			text = text.replace("{y}", String.format("%.2f", pos.y));
-			text = text.replace("{z}", String.format("%.2f", pos.z));
-
-			text = text.replace("{health}", String.format("%.1f", client.player.getHealth()));
-			text = text.replace("{food}", String.valueOf(client.player.getHungerManager().getFoodLevel()));
-			text = text.replace("{xp}", String.valueOf(client.player.experienceLevel));
-
-			text = text.replace("{dimension}", client.world.getRegistryKey().getValue().toString());
-			text = text.replace("{difficulty}", client.world.getDifficulty().getName());
-			text = text.replace("{weather}", client.world.isRaining() ? "raining" : "clear");
-
-			if (client.interactionManager != null) {
-				text = text.replace("{gameMode}", client.interactionManager.getCurrentGameMode().getName());
-			}
-
-			ItemStack mainHand = client.player.getMainHandStack();
-			text = text.replace("{mainHand}", mainHand.isEmpty() ? "nothing" :
-					String.format("%dx %s", mainHand.getCount(), mainHand.getItem().getName().getString()));
-
-			ItemStack offHand = client.player.getOffHandStack();
-			text = text.replace("{offHand}", offHand.isEmpty() ? "nothing" :
-					String.format("%dx %s", offHand.getCount(), offHand.getItem().getName().getString()));
-
-			PlayerInventory inventory = client.player.getInventory();
-			StringBuilder inventoryContent = new StringBuilder();
-			for (int i = 0; i < inventory.main.size(); i++) {
-				ItemStack stack = inventory.main.get(i);
-				if (!stack.isEmpty()) {
-					if (!inventoryContent.isEmpty()) {
-						inventoryContent.append(", ");
-					}
-					inventoryContent.append(stack.getCount())
-							.append("x ")
-							.append(stack.getItem().getName().getString());
-				}
-			}
-			text = text.replace("{inventory}", !inventoryContent.isEmpty() ?
-					inventoryContent.toString() : "empty");
-
-			StringBuilder armorContent = new StringBuilder();
-			for (ItemStack armorItem : client.player.getInventory().armor) {
-				if (!armorItem.isEmpty()) {
-					if (!armorContent.isEmpty()) {
-						armorContent.append(", ");
-					}
-					int maxDurability = armorItem.getMaxDamage();
-					int currentDurability = maxDurability - armorItem.getDamage();
-					armorContent.append(armorItem.getItem().getName().getString())
-							.append(" (")
-							.append(currentDurability)
-							.append("/")
-							.append(maxDurability)
-							.append(")");
-				}
-			}
-			text = text.replace("{armor}", !armorContent.isEmpty() ?
-					armorContent.toString() : "no armor");
-
-			PlayerListEntry playerEntry = Objects.requireNonNull(client.getNetworkHandler()).getPlayerListEntry(client.player.getUuid());
-			if (playerEntry != null) {
-				text = text.replace("{ping}", String.valueOf(playerEntry.getLatency()));
-			}
-
-			if (client.getNetworkHandler() != null) {
-				int playerCount = client.getNetworkHandler().getPlayerList().size();
-				text = text.replace("{playerCount}", String.valueOf(playerCount));
-
-				StringBuilder playerList = new StringBuilder();
-				for (PlayerListEntry player : client.getNetworkHandler().getPlayerList()) {
-					playerList.append(player.getProfile().getName()).append(", ");
-				}
-				String players = !playerList.isEmpty() ?
-						playerList.substring(0, playerList.length() - 2) :
-						"no other players";
-				text = text.replace("{playerList}", players);
-			}
-
-		} catch (Exception e) {
-			LOGGER.error("Error processing variables", e);
-
-		}
-
-		return text;
+		return VariableProcessor.processVariables(text);
 	}
 
-	private int executeSayInChat(CommandContext<FabricClientCommandSource> context) {
+	int executeSayInChat(CommandContext<FabricClientCommandSource> context) {
 		String message = StringArgumentType.getString(context, "message");
 		ClientPlayerEntity player = MinecraftClient.getInstance().player;
 

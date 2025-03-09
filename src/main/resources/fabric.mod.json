@@ -1,15 +1,15 @@
 {
 	"schemaVersion": 1,
 	"id": "geminiaiinminecraft",
-	"version": "1.0.4b",
+	"version": "1.0.5",
 	"name": "Gemini AI in Minecraft",
 	"description": "Chat directly with Gemini AI in Minecraft. Forget just AI agents, let's talk!",
 	"authors": [
 		"Roflboy2009"
 	],
 	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
+		"homepage": "https://modrinth.com/mod/gemini-in-minecraft",
+		"sources": "https://github.com/BehindThatTeam/GeminiInMinecraft"
 	},
 	"license": "MIT",
 	"icon": "assets/geminiinminecraft/icon.png",

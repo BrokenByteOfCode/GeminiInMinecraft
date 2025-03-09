@@ -69,6 +69,7 @@ These variables are automatically updated each time you send a query to the AI, 
     *   `tokens`: Any number between 50 and 8046
 *   `/setupai commands <enabled>`:  Enables or disables AI command execution.
     *    `enabled`:  `true` or `false`.
+    *   `/reloadconfig`: Reload config like you just change it out of minecraft env.
 
 ## Installation
 

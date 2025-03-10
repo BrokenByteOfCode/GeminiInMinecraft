@@ -66,7 +66,7 @@ public class GeminiCommandRegistry {
                 literal("setupai")
                         .then(literal("apikey")
                                 .then(argument("apiKey", StringArgumentType.string())
-                                        .executes(client::setupApiToken)
+                                        .executes(client::setupApiKey)
                                 )
                         )
                         .then(literal("model")

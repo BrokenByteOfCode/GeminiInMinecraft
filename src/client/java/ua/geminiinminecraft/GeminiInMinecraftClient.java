@@ -249,11 +249,11 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		return 1;
 	}
 
-	int setupApiToken(CommandContext<?> context) {
-		String token = StringArgumentType.getString(context, "apiToken");
-		GEMINI_API_KEY = token;
-		sendFeedback(Text.literal(PREFIX + "§aAPI token set!"));
-        LOGGER.info("API token set: {}...", token.substring(0, Math.min(5, token.length())));
+	int setupApiKey(CommandContext<?> context) {
+		String key = StringArgumentType.getString(context, "apiKey");
+		GEMINI_API_KEY = key;
+		sendFeedback(Text.literal(PREFIX + "§aAPI key set!"));
+        LOGGER.info("API key set: {}...", key.substring(0, Math.min(5, key.length())));
 		saveConfig();
 		return Command.SINGLE_SUCCESS;
 	}

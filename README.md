@@ -1,3 +1,4 @@
+[![Build and Release](https://github.com/BehindThatTeam/GeminiInMinecraft/actions/workflows/build.yml/badge.svg)](https://github.com/BehindThatTeam/GeminiInMinecraft/actions/workflows/build.yml)
 # Gemini in Minecraft
 
 **Brought to you by Roflboy, with love for the Minecraft community. <3**

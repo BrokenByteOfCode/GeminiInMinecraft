@@ -16,7 +16,7 @@ public class CommandHelper {
 
         MutableText aiCommand = Text.literal("§b/ai §f<query> §7- Send a question to AI")
                 .styled(style -> style
-                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/ai "))
+                        .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/ai ")) // Залишаємо як є, якщо працює
                         .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to use /ai command")))
                 );
 
@@ -48,31 +48,38 @@ public class CommandHelper {
                 Text.literal("§a/setupai §fcommands <true/false> §7- Enable/disable AI command execution")
                         .styled(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai commands "))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to configure command execution")))),
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to configure command execution")))
+                ),
                 Text.literal("§a/setupai §fdefaultsystem §7- Reset system prompt to default")
                         .styled(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/setupai defaultsystem"))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to reset system prompt")))),
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to reset system prompt")))
+                ),
                 Text.literal("§a/setupai §fmaxoutput <tokens> §7- Set max response length")
                         .styled(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai maxoutput "))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set max output tokens")))),
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set max output tokens")))
+                ),
                 Text.literal("§a/setupai §fmemory <true/false> <size> §7- Configure memory")
                         .styled(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai memory "))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to configure memory settings")))),
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to configure memory settings")))
+                ),
                 Text.literal("§a/setupai §fmodel <n> §7- Set AI model")
                         .styled(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai model "))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set AI model")))),
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set AI model")))
+                ),
                 Text.literal("§a/setupai §fsystem <message> §7- Set system prompt")
                         .styled(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai system "))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set system prompt")))),
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set system prompt")))
+                ),
                 Text.literal("§a/setupai §fapikey <key> §7- Set your API key")
                         .styled(style -> style
                         .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/setupai apikey "))
-                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set API Key"))))
+                        .withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Text.literal("Click to set API Key")))
+                )
         };
 
         for (Text cmd : configCommands) {

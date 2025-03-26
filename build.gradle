@@ -3,48 +3,58 @@ plugins {
 	id 'maven-publish'
 }
 
+def mcVersions = ['1.21.4', '1.21.5']
+def selectedMcVersion = project.hasProperty('mcver') ? project.property('mcver') : mcVersions[0]
+
+if (!mcVersions.contains(selectedMcVersion)) {
+	throw new GradleException("Unsupported Minecraft version. Supported versions: ${mcVersions.join(', ')}")
+}
+
+test {
+	enabled = false
+}
+
 version = project.mod_version
 group = project.maven_group
-
 base {
 	archivesName = project.archives_base_name
 }
 
-repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
-}
+repositories {}
 
 loom {
 	splitEnvironmentSourceSets()
-
 	mods {
 		"geminiinminecraft" {
 			sourceSet sourceSets.main
 			sourceSet sourceSets.client
 		}
 	}
-
 }
 
 dependencies {
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	minecraft "com.mojang:minecraft:${selectedMcVersion}"
+
+	def yarnMappings = selectedMcVersion == '1.21.4' ? '1.21.4+build.8' : '1.21.5-rc2+build.1'
+	def loaderVersion = "0.16.10"
+	def fabricApiVersion = selectedMcVersion == '1.21.4' ? '0.118.0' : '0.119.0'
+
+	mappings "net.fabricmc:yarn:${yarnMappings}:v2"
+	modImplementation "net.fabricmc:fabric-loader:${loaderVersion}"
+
 	implementation 'com.google.code.gson:gson:2.10.1'
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
-	modImplementation "net.fabricmc.fabric-api:fabric-command-api-v2:${project.fabric_version}"
-	modImplementation "net.fabricmc.fabric-api:fabric-command-api-v2:<fabric_api_version>"
+
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${fabricApiVersion}+${selectedMcVersion}"
+	modImplementation "net.fabricmc.fabric-api:fabric-command-api-v2:${fabricApiVersion}+${selectedMcVersion}"
 }
 
 processResources {
 	inputs.property "version", project.version
+	inputs.property "minecraft_version", selectedMcVersion
 
 	filesMatching("fabric.mod.json") {
-		expand "version": inputs.properties.version
+		expand "version": inputs.properties.version,
+				"minecraft_version": selectedMcVersion
 	}
 }
 
@@ -53,24 +63,18 @@ tasks.withType(JavaCompile).configureEach {
 }
 
 java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
 	withSourcesJar()
-
 	sourceCompatibility = JavaVersion.VERSION_21
 	targetCompatibility = JavaVersion.VERSION_21
 }
 
 jar {
 	inputs.property "archivesName", project.base.archivesName
-
 	from("LICENSE") {
 		rename { "${it}_${inputs.properties.archivesName}"}
 	}
 }
 
-// configure the maven publication
 publishing {
 	publications {
 		create("mavenJava", MavenPublication) {
@@ -78,12 +82,5 @@ publishing {
 			from components.java
 		}
 	}
-
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
+	repositories {}
 }

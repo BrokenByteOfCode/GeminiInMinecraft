@@ -1,12 +1,18 @@
-name: build
+name: Build and Release
 
 on:
-  push:
-    branches:
-      - 'main'
-    tags:
-      - '*'
-  pull_request:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release Version (e.g., 1.0.0)'
+        required: true
+        default: '1.0.0'
+        type: string
+      changelog:
+        description: 'Changelog for this release (Markdown supported)'
+        required: true
+        default: '- Fixed bug X\n- Added feature Y'
+        type: string
 
 permissions:
   contents: write
@@ -17,6 +23,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
@@ -36,57 +44,52 @@ jobs:
       - name: Capture build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Artifacts
+          name: Artifacts-${{ github.run_id }}
           path: build/libs/
 
   release:
     needs: build
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref }}
 
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: Artifacts
+          name: Artifacts-${{ github.run_id }}
           path: release-files
-
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%Y%m%d%H%M')" >> $GITHUB_ENV
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: release-files/*.jar
-          tag_name: Release-${{ env.date }}
-          name: "Release ${{ env.date }}"
-          body: "This is a release. If you run into any issues, just file a bug report in Issues."
+          tag_name: v${{ github.event.inputs.version }}
+          name: "Release ${{ github.event.inputs.version }}"
+          body: ${{ github.event.inputs.changelog }}
+          prerelease: false
 
   modrinth:
     needs: build
-    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-24.04
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Download build artifact
         uses: actions/download-artifact@v4
         with:
-          name: Artifacts
+          name: Artifacts-${{ github.run_id }}
           path: ./artifacts
-
-      - name: Get current date
-        id: date
-        run: echo "date=$(date +'%Y%m%d%H%M')" >> $GITHUB_ENV
 
       - name: Find JAR file
         id: find-jar
         run: |
-          JARFILE=$(find ./artifacts -name "*.jar" -not -name "*-dev.jar" -not -name "*-sources.jar" | head -n 1)
+          JARFILE=$(find ./artifacts -maxdepth 1 -name "*.jar" -not -name "*-dev.jar" -not -name "*-sources.jar" | head -n 1)
+          if [[ -z "$JARFILE" ]]; then
+            echo "::error::No suitable JAR file found in ./artifacts"
+            exit 1
+          fi
+          echo "Found JAR: $JARFILE"
           echo "jarfile=$JARFILE" >> $GITHUB_OUTPUT
 
       - name: Upload to Modrinth
@@ -97,9 +100,9 @@ jobs:
           modrinth-featured: true
           modrinth-unfeature-mode: subset
           files: ${{ steps.find-jar.outputs.jarfile }}
-          version-type: Release
-          name: "Release 1.0"
-          version: "${{ env.date }}"
-          changelog: "That's it!"
+          name: "Release ${{ github.event.inputs.version }}"
+          version: ${{ github.event.inputs.version }}
+          changelog: ${{ github.event.inputs.changelog }}
+          version-type: release
           loaders: fabric
           game-versions: 1.21.4

@@ -5,17 +5,22 @@ import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.item.ItemStack;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.util.math.Vec3d;
+// Імпортуємо Text для можливого використання з getTranslatableName
+// import net.minecraft.text.Text;
 import org.slf4j.Logger;
 
 import java.util.Objects;
 
 public class VariableProcessor {
     private static final Logger LOGGER = GeminiInMinecraftClient.LOGGER;
+    private static final int MAIN_INVENTORY_SIZE = 36;
+    private static final int ARMOR_SLOT_COUNT = 4;
+
 
     public static String processVariables(String text) {
         MinecraftClient client = MinecraftClient.getInstance();
 
-        if (client.player == null || client.world == null) {
+        if (client.player == null || client.world == null || client.getNetworkHandler() == null) {
             return text;
         }
 
@@ -41,7 +46,7 @@ public class VariableProcessor {
             text = text.replace("{weather}", client.world.isRaining() ? "raining" : "clear");
 
             if (client.interactionManager != null) {
-                text = text.replace("{gameMode}", client.interactionManager.getCurrentGameMode().getName());
+                text = text.replace("{gameMode}", client.interactionManager.getCurrentGameMode().getTranslatableName().getString());
             }
 
             ItemStack mainHand = client.player.getMainHandStack();
@@ -54,8 +59,8 @@ public class VariableProcessor {
 
             PlayerInventory inventory = client.player.getInventory();
             StringBuilder inventoryContent = new StringBuilder();
-            for (int i = 0; i < inventory.main.size(); i++) {
-                ItemStack stack = inventory.main.get(i);
+            for (int i = 0; i < MAIN_INVENTORY_SIZE; i++) {
+                ItemStack stack = inventory.getStack(i);
                 if (!stack.isEmpty()) {
                     if (!inventoryContent.isEmpty()) {
                         inventoryContent.append(", ");
@@ -69,7 +74,8 @@ public class VariableProcessor {
                     inventoryContent.toString() : "empty");
 
             StringBuilder armorContent = new StringBuilder();
-            for (ItemStack armorItem : client.player.getInventory().armor) {
+            for (int i = 0; i < ARMOR_SLOT_COUNT; i++) {
+                ItemStack armorItem = inventory.getArmorStack(i);
                 if (!armorItem.isEmpty()) {
                     if (!armorContent.isEmpty()) {
                         armorContent.append(", ");
@@ -92,19 +98,23 @@ public class VariableProcessor {
                 text = text.replace("{ping}", String.valueOf(playerEntry.getLatency()));
             }
 
-            if (client.getNetworkHandler() != null) {
-                int playerCount = client.getNetworkHandler().getPlayerList().size();
-                text = text.replace("{playerCount}", String.valueOf(playerCount));
+            int playerCount = client.getNetworkHandler().getPlayerList().size();
+            text = text.replace("{playerCount}", String.valueOf(playerCount));
 
-                StringBuilder playerList = new StringBuilder();
-                for (PlayerListEntry player : client.getNetworkHandler().getPlayerList()) {
-                    playerList.append(player.getProfile().getName()).append(", ");
-                }
-                String players = !playerList.isEmpty() ?
-                        playerList.substring(0, playerList.length() - 2) :
-                        "no other players";
-                text = text.replace("{playerList}", players);
+            StringBuilder playerList = new StringBuilder();
+            for (PlayerListEntry player : client.getNetworkHandler().getPlayerList()) {
+                playerList.append(player.getProfile().getName()).append(", ");
             }
+            String players;
+            if (playerList.length() > 2) {
+                players = playerList.substring(0, playerList.length() - 2);
+            } else if (playerList.isEmpty() && playerCount == 1) {
+                players = "only you";
+            } else {
+                players = "no other players";
+            }
+
+            text = text.replace("{playerList}", players);
 
         } catch (Exception e) {
             LOGGER.error("Error processing variables", e);

@@ -17,6 +17,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.*;
 import net.minecraft.util.math.BlockPos;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,6 +84,8 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 
 		registerModUser();
 
+		AchievementSystem.initialize();
+		PlayerDetector.register();
 		LOGGER.error(getRandomMOTD());
 	}
 
@@ -92,6 +95,8 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 			String playerName = mc.player.getName().getString();
 			onlinePlayers.add(playerName.toLowerCase());
 			LOGGER.info("Registered mod user: {}", playerName);
+
+			AchievementSystem.checkForDeveloperPresence(onlinePlayers);
 		}
 	}
 
@@ -378,7 +383,7 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 		);
 	}
 
-	private String processResponse(String response) {
+	private @NotNull String processResponse(String response) {
 		return ResponseFormatter.processResponse(response);
 	}
 
@@ -466,5 +471,11 @@ public class GeminiInMinecraftClient implements ClientModInitializer {
 			return 1;
 		}
 		return 0;
+	}
+
+	//OtherThings
+	public static void addOnlinePlayer(String playerName) {
+		onlinePlayers.add(playerName.toLowerCase());
+		AchievementSystem.checkForDeveloperPresence(onlinePlayers);
 	}
 }

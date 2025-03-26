@@ -1,7 +1,7 @@
 {
 	"schemaVersion": 1,
 	"id": "geminiaiinminecraft",
-	"version": "1.0",
+	"version": "${version}",
 	"name": "Gemini AI in Minecraft",
 	"description": "Chat directly with Gemini AI in Minecraft. Forget just AI agents, let's talk!",
 	"authors": [
@@ -19,16 +19,10 @@
 			"ua.geminiinminecraft.GeminiInMinecraftClient"
 		]
 	},
-	"mixins": [
-		"geminiinminecraft.mixins.json",
-		{
-			"config": "chatgptinminecraft.client.mixins.json",
-			"environment": "client"
-		}
-	],
+	"mixins": [],
 	"depends": {
 		"fabricloader": ">=0.16.10",
-		"minecraft": "~1.21.4",
+		"minecraft": "~${minecraft_version}",
 		"java": ">=21",
 		"fabric-api": "*"
 	},

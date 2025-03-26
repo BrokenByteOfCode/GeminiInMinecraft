@@ -4,6 +4,8 @@
 
 This Fabric mod integrates Google's Gemini AI into Minecraft, allowing you to interact with an AI assistant directly within the game.  The AI can answer questions, provide information about your current environment, and even execute in-game commands (if enabled).
 
+[![Mod Demo](https://img.youtube.com/vi/zDPOpKVD3qU/maxresdefault.jpg)](https://www.youtube.com/watch?v=zDPOpKVD3qU)
+
 ## Features
 
 *   **In-Game AI Chat:** Ask Gemini questions and receive responses directly in your chat window.

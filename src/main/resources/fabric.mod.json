@@ -21,11 +21,11 @@
 	},
 	"mixins": [],
 	"depends": {
-		"fabricloader": ">=0.16.10",
-		"minecraft": "~${minecraft_version}",
-		"java": ">=21",
-		"fabric-api": "*"
-	},
+	    "fabricloader": ">=0.16.10",
+	    "minecraft": "1.21.x",
+	    "java": ">=21",
+	    "fabric-api": "*"
+	}
 	"suggests": {
 		"another-mod": "*"
 	}
